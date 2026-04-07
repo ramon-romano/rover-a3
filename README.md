@@ -62,7 +62,7 @@ A3/
 1. No terminal, navegue até a pasta raiz do projeto (`A3/`).
 2. Execute o comando:
    ```bash
-   mvn spring-boot:run
+   .\mvnw spring-boot:run
    ```
 3. Assim que o servidor iniciar, abra o navegador em:
    **[http://localhost:8080/index.html](http://localhost:8080/index.html)**
