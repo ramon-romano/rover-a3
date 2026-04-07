@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rover Simulator - A3 Project</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto+Mono&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <h1>Rover Simulator <span>A3</span></h1>
+            <p>Comando e Exploração Interplanetária</p>
+        </header>
+
+        <main>
+            <div class="control-panel">
+                <section class="code-editor-section">
+                    <div class="section-badge">Painel de Comandos</div>
+                    
+                    <div class="action-buttons">
+                        <button class="action-btn" data-cmd="AVANCAR 1">↑ AVANÇAR</button>
+                        <button class="action-btn" data-cmd="RECUAR 1">↓ RECUAR</button>
+                        <button class="action-btn" data-cmd="ESQUERDA">↺ ESQUERDA</button>
+                        <button class="action-btn" data-cmd="DIREITA">↻ DIREITA</button>
+                        <button class="action-btn" data-cmd="SCAN">🔍 SCAN</button>
+                    </div>
+
+                    <textarea id="editor" spellcheck="false" placeholder="Crie seu script de missão aqui..."></textarea>
+                    
+                    <div class="editor-actions">
+                        <button id="run-btn" class="primary-btn">LANÇAR MISSÃO</button>
+                        <button id="reset-btn" class="secondary-btn">NOVO MUNDO</button>
+                        <button id="clear-btn" class="tertiary-btn">LIMPAR</button>
+                    </div>
+                </section>
+
+                <section class="rover-stats">
+                    <div class="stat-card">
+                        <span class="label">COORDENADAS</span>
+                        <span id="coord-display" class="value">X: 10, Y: 10</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="label">ORIENTAÇÃO</span>
+                        <span id="dir-display" class="value">NORTE</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="label">STATUS SCANNER</span>
+                        <span id="scan-display" class="value">READY</span>
+                    </div>
+                </section>
+
+                <section class="logs-section">
+                    <div class="section-badge">Relatório de Telemetria</div>
+                    <div id="logs" class="logs-container">
+                        <div class="log-entry system">Aguardando comandos do Centro de Controle...</div>
+                    </div>
+                </section>
+            </div>
+
+            <div class="visualizer">
+                <div class="grid-container" id="grid"></div>
+                <div class="documentation-hint">
+                    <h3>Manual de Programação:</h3>
+                    <ul>
+                      <li><code>AVANCAR n</code> - Vai p/ frente</li>
+                      <li><code>RECUAR n</code> - Vai p/ trás</li>
+                      <li><code>ESQUERDA</code> - Vira 90º L</li>
+                      <li><code>DIREITA</code> - Vira 90º R</li>
+                      <li><code>REPETIR n { ... }</code> - Loop</li>
+                      <li><code>SE OBSTACULO { ... }</code> - IF</li>
+                    </ul>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="error-overlay" class="overlay hidden">
+        <div class="error-modal">
+            <h2>ALERTA DE MISSÃO!</h2>
+            <p id="error-msg"></p>
+            <button id="close-error">ENTENDIDO</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
