@@ -19,6 +19,7 @@ public class InterpreterService {
         public boolean obstacleDetected;
         public boolean collision;
         public boolean outOfBounds;
+        public boolean sampleCollected;
 
         public SimulationStep(int x, int y, Direction dir, String log) {
             this.x = x;
@@ -35,10 +36,13 @@ public class InterpreterService {
         public int gridWidth;
         public int gridHeight;
         public Set<String> obstacles;
+        public Set<String> samples;
+        public Set<String> revealedCells;
     }
 
     public SimulationResult run(String script, Grid grid, Rover rover) {
         SimulationResult result = new SimulationResult();
+        grid.revealCell(rover.getX(), rover.getY(), 1);
         result.steps.add(new SimulationStep(rover.getX(), rover.getY(), rover.getDirection(), "Pouso concluído. Iniciando missão."));
 
         try {
@@ -89,18 +93,27 @@ public class InterpreterService {
                     index++;
                     break;
                 case "SCAN":
+                    grid.revealCell(rover.getX(), rover.getY(), 4);
                     boolean detected = checkObstacleAhead(grid, rover);
                     SimulationStep detStep = new SimulationStep(rover.getX(), rover.getY(), rover.getDirection(), 
-                        detected ? "SINAL RECEBIDO: Obstáculo detectado!" : "Scanner limpo. Nenhum obstáculo à frente.");
+                        detected ? "SINAL RECEBIDO: Obstáculo detectado!" : "Scanner limpo. Área revelada num raio de 4 células.");
                     detStep.obstacleDetected = detected;
                     result.steps.add(detStep);
                     index++;
-                    break;
+                    break;  
                 case "REPETIR":
                     index = handleFor(tokens, index + 1, grid, rover, result);
                     break;
                 case "SE":
                     index = handleIf(tokens, index + 1, grid, rover, result);
+                    break;
+                case "COLETAR":
+                    boolean coletou = grid.collectSample(rover.getX(), rover.getY());
+                    SimulationStep coletarStep = new SimulationStep(rover.getX(), rover.getY(), rover.getDirection(), 
+                        coletou ? "AMOSTRA COLETADA: Parabéns, você finalizou a missão!" : "Nenhuma amostra encontrada nesta posição.");
+                    coletarStep.sampleCollected = coletou;
+                    result.steps.add(coletarStep);
+                    index++;
                     break;
                 default:
                     throw new Exception("Comando não reconhecido: " + token);
@@ -148,6 +161,17 @@ public class InterpreterService {
                 SimulationStep failStep = new SimulationStep(rover.getX(), rover.getY(), rover.getDirection(), errorMsg);
                 failStep.collision = true;
                 result.steps.add(failStep);
+                return tokens.size();
+            }
+
+            if (grid.collectSample(nextX, nextY)) {
+                rover.setX(nextX);
+                rover.setY(nextY);
+                String msg = "AMOSTRA COLETADA em (" + nextX + ", " + nextY + ")! Missão concluída!";
+                result.success = true;
+                SimulationStep collectStep = new SimulationStep(rover.getX(), rover.getY(), rover.getDirection(), msg);
+                collectStep.sampleCollected = true;
+                result.steps.add(collectStep);
                 return tokens.size();
             }
 

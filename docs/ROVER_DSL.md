@@ -7,6 +7,7 @@ A RoverDSL é uma linguagem de domínio específico criada para controlar o rove
 - `RECUAR n`: Move o rover `n` unidades para trás.
 - `ESQUERDA`: Gira o rover 90 graus para a esquerda.
 - `DIREITA`: Gira o rover 90 graus para a direita.
+- `COLETAR`: Coleta o item encontrado no local.
 
 ## Sensoriamento
 - `SCAN`: Verifica se há um obstáculo imediatamente à frente. Retorna o status para o painel de telemetria.
