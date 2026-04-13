@@ -31,7 +31,9 @@ public class RoverController {
         result.gridWidth = currentGrid.getWidth();
         result.gridHeight = currentGrid.getHeight();
         result.obstacles = currentGrid.getObstacles();
-        
+        result.samples = currentGrid.getSamples();
+        result.revealedCells = currentGrid.getRevealedCells();
+
         return result;
     }
 
@@ -42,8 +44,10 @@ public class RoverController {
         response.put("width", currentGrid.getWidth());
         response.put("height", currentGrid.getHeight());
         response.put("obstacles", currentGrid.getObstacles());
+        response.put("samples", currentGrid.getSamples());
         response.put("startX", 10);
         response.put("startY", 10);
+        response.put("revealedCells", currentGrid.getRevealedCells());
         return response;
     }
 
@@ -65,5 +69,13 @@ public class RoverController {
             if (x == 10 && y == 10) continue;
             currentGrid.addObstacle(x, y);
         }
+        
+        int sampleX, sampleY;
+        do {
+            sampleX = rand.nextInt(size);
+            sampleY = rand.nextInt(size);
+        } while (currentGrid.isObstacle(sampleX, sampleY) || (sampleX == 10 && sampleY == 10));
+        currentGrid.addSample(sampleX, sampleY);
+
     }
 }

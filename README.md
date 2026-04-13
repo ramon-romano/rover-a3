@@ -5,7 +5,7 @@ Este projeto é um simulador de movimentação de um rover em Marte (ou qualquer
 ## 🚀 Tecnologias Utilizadas
 
 - **Backend:** Java 17+ com Spring Boot 3.x
-- **Frontend:** HTML5, CSS3 (Vanilla) e JavaScript (ES6+)
+- **Frontend:** React + Vite
 - **Estilo:** Glassmorphism, Neon UI, Animações CSS
 - **Arquitetura:** REST API (Comunicação entre JS e Java)
 
@@ -14,27 +14,28 @@ Este projeto é um simulador de movimentação de um rover em Marte (ou qualquer
 A linguagem foi desenhada para ser intuitiva e poderosa, suportando movimentos básicos, detecção de obstáculos, laços de repetição e condicionais.
 
 ### Comandos Básicos
-- `MOVE n`: Move o rover `n` posições para frente. (ex: `MOVE 2`)
-- `BACK n`: Recua o rover `n` posições. (ex: `BACK 1`)
-- `LEFT`: Gira o rover 90º para a esquerda.
-- `RIGHT`: Gira o rover 90º para a direita.
-- `DETECT`: Ativa o scanner frontal. Retorna se há obstáculo ou limite de mapa.
+- `AVANCAR n`: Move o rover `n` posições para frente. (ex: `AVANCAR 2`)
+- `RECUAR n`: Recua o rover `n` posições. (ex: `RECUAR 1`)
+- `ESQUERDA`: Gira o rover 90º para a esquerda.
+- `DIREITA`: Gira o rover 90º para a direita.
+- `SCAN`: Ativa o scanner frontal. Retorna se há obstáculo ou limite de mapa.
+- `COLETAR`: Coleta o item encontrado no local.
 
 ### Estruturas de Controle (Desafio Bônus)
-- **Loops (FOR):** Repete um bloco de comandos.
+- **Loops (REPETIR):** Repete um bloco de comandos.
   ```
-  FOR 4 {
-    MOVE 1
-    RIGHT
+  REPETIR 4 {
+    AVANCAR 1
+    DIREITA
   }
   ```
-- **Condicionais (IF/ELSE):** Executa comandos baseados na detecção de obstáculos.
+- **Condicionais (SE/ELSE):** Executa comandos baseados na detecção de obstáculos.
   ```
-  IF OBSTACLE {
-    LEFT
-    MOVE 1
+  SE OBSTACULO {
+    ESQUERDA
+    AVANCAR 1
   } ELSE {
-    MOVE 2
+    AVANCAR 2
   }
   ```
 
