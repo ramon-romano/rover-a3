@@ -1,8 +1,14 @@
 import React from 'react';
 import { View, StyleSheet, Text } from 'react-native';
 
-export default function RoverStats({ pos, scanStatus }) {
-  const dirNames = { 'N': 'NORTE', 'S': 'SUL', 'E': 'LESTE', 'W': 'OESTE' };
+export default function RoverStats({
+  pos,
+  scanStatus,
+}: {
+  pos: { x: number; y: number; dir: string };
+  scanStatus: string;
+}) {
+  const dirNames: Record<string, string> = { N: 'NORTE', S: 'SUL', E: 'LESTE', W: 'OESTE' };
 
   return (
     <View style={styles.container}>

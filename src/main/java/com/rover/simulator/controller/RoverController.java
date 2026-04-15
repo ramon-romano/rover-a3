@@ -77,5 +77,7 @@ public class RoverController {
         } while (currentGrid.isObstacle(sampleX, sampleY) || (sampleX == 10 && sampleY == 10));
         currentGrid.addSample(sampleX, sampleY);
 
+        // Reveal initial 3x3 area around rover start so the map isn't fully dark on load
+        currentGrid.revealCell(10, 10, 1);
     }
 }

@@ -20,6 +20,7 @@ public class InterpreterService {
         public boolean collision;
         public boolean outOfBounds;
         public boolean sampleCollected;
+        public List<String> newRevealedCells = new ArrayList<>();
 
         public SimulationStep(int x, int y, Direction dir, String log) {
             this.x = x;
@@ -42,8 +43,10 @@ public class InterpreterService {
 
     public SimulationResult run(String script, Grid grid, Rover rover) {
         SimulationResult result = new SimulationResult();
-        grid.revealCell(rover.getX(), rover.getY(), 1);
-        result.steps.add(new SimulationStep(rover.getX(), rover.getY(), rover.getDirection(), "Pouso concluído. Iniciando missão."));
+        List<String> initialReveals = grid.revealCell(rover.getX(), rover.getY(), 1);
+        SimulationStep firstStep = new SimulationStep(rover.getX(), rover.getY(), rover.getDirection(), "Pouso concluído. Iniciando missão.");
+        firstStep.newRevealedCells.addAll(initialReveals);
+        result.steps.add(firstStep);
 
         try {
             List<String> tokens = tokenize(script);
@@ -93,11 +96,12 @@ public class InterpreterService {
                     index++;
                     break;
                 case "SCAN":
-                    grid.revealCell(rover.getX(), rover.getY(), 4);
+                    List<String> scanReveals = grid.revealCell(rover.getX(), rover.getY(), 3);
                     boolean detected = checkObstacleAhead(grid, rover);
                     SimulationStep detStep = new SimulationStep(rover.getX(), rover.getY(), rover.getDirection(), 
-                        detected ? "SINAL RECEBIDO: Obstáculo detectado!" : "Scanner limpo. Área revelada num raio de 4 células.");
+                        detected ? "SINAL RECEBIDO: Obstáculo detectado!" : "Scanner limpo. Área revelada num raio de 3 células.");
                     detStep.obstacleDetected = detected;
+                    detStep.newRevealedCells.addAll(scanReveals);
                     result.steps.add(detStep);
                     index++;
                     break;  
@@ -164,20 +168,12 @@ public class InterpreterService {
                 return tokens.size();
             }
 
-            if (grid.collectSample(nextX, nextY)) {
-                rover.setX(nextX);
-                rover.setY(nextY);
-                String msg = "AMOSTRA COLETADA em (" + nextX + ", " + nextY + ")! Missão concluída!";
-                result.success = true;
-                SimulationStep collectStep = new SimulationStep(rover.getX(), rover.getY(), rover.getDirection(), msg);
-                collectStep.sampleCollected = true;
-                result.steps.add(collectStep);
-                return tokens.size();
-            }
-
             rover.setX(nextX);
             rover.setY(nextY);
-            result.steps.add(new SimulationStep(rover.getX(), rover.getY(), rover.getDirection(), "Movendo para " + rover.getX() + ", " + rover.getY()));
+            List<String> moveReveals = grid.revealCell(rover.getX(), rover.getY(), 1);
+            SimulationStep moveStep = new SimulationStep(rover.getX(), rover.getY(), rover.getDirection(), "Movendo para " + rover.getX() + ", " + rover.getY());
+            moveStep.newRevealedCells.addAll(moveReveals);
+            result.steps.add(moveStep);
         }
         return index + 1;
     }

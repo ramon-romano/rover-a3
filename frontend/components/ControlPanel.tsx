@@ -1,10 +1,20 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, TextInput, TouchableOpacity, Text } from 'react-native';
 
-export default function ControlPanel({ onRun, onReset, onClearLogs, isProcessing }) {
+export default function ControlPanel({
+  onRun,
+  onReset,
+  onClearLogs,
+  isProcessing,
+}: {
+  onRun: (script: string) => void;
+  onReset: () => void;
+  onClearLogs: () => void;
+  isProcessing: boolean;
+}) {
   const [script, setScript] = useState("");
 
-  const appendCommand = (cmd) => {
+  const appendCommand = (cmd: string) => {
     setScript(prev => prev ? `${prev}\n${cmd}` : cmd);
   };
 
@@ -14,6 +24,7 @@ export default function ControlPanel({ onRun, onReset, onClearLogs, isProcessing
     { label: '↺ ESQUERDA', cmd: 'ESQUERDA' },
     { label: '↻ DIREITA', cmd: 'DIREITA' },
     { label: '🔍 SCAN', cmd: 'SCAN' },
+    { label: '🧪 COLETAR', cmd: 'COLETAR' },
     { label: '🔄 FOR', cmd: 'REPETIR 4 {\n\n}' },
     { label: '🔀 IF', cmd: 'SE OBSTACULO {\n\n}' },
   ];
@@ -23,15 +34,20 @@ export default function ControlPanel({ onRun, onReset, onClearLogs, isProcessing
       <Text style={styles.badge}>Painel de Comandos</Text>
       
       <View style={styles.actionButtonsRow}>
-        {actionButtons.filter(b => b.cmd !== 'SCAN').map((btn, i) => (
+        {actionButtons.filter(b => b.cmd !== 'SCAN' && b.cmd !== 'COLETAR').map((btn, i) => (
           <TouchableOpacity key={i} style={styles.actionBtn} onPress={() => appendCommand(btn.cmd)}>
             <Text style={styles.actionBtnText}>{btn.label}</Text>
           </TouchableOpacity>
         ))}
       </View>
-      <TouchableOpacity style={styles.scanBtn} onPress={() => appendCommand('SCAN')}>
-        <Text style={styles.scanBtnText}>🔍 SCAN TERRENO</Text>
-      </TouchableOpacity>
+      <View style={{ flexDirection: 'row', gap: 8, marginBottom: 16 }}>
+        <TouchableOpacity style={[styles.scanBtn, { flex: 1, marginBottom: 0 }]} onPress={() => appendCommand('SCAN')}>
+          <Text style={styles.scanBtnText}>🔍 RADAR</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={[styles.scanBtn, { flex: 1, marginBottom: 0, borderColor: '#c084fc', backgroundColor: 'rgba(88, 28, 135, 0.5)' }]} onPress={() => appendCommand('COLETAR')}>
+          <Text style={[styles.scanBtnText, { color: '#e879f9' }]}>🧪 COLETAR</Text>
+        </TouchableOpacity>
+      </View>
 
       <TextInput 
         style={styles.editor}
