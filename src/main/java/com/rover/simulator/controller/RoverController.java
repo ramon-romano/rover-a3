@@ -61,7 +61,7 @@ public class RoverController {
         int size = 20;
         currentGrid = new Grid(size, size);
         Random rand = new Random();
-        int obstacleCount = 30 + rand.nextInt(20);
+        int obstacleCount = 60 + rand.nextInt(40);
         
         for (int i = 0; i < obstacleCount; i++) {
             int x = rand.nextInt(size);

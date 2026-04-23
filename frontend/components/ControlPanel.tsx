@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, TextInput, TouchableOpacity, Text } from 'react-native';
+import { View, StyleSheet, TextInput, TouchableOpacity, Text, Modal, ScrollView } from 'react-native';
 
 export default function ControlPanel({
   onRun,
@@ -13,20 +13,63 @@ export default function ControlPanel({
   isProcessing: boolean;
 }) {
   const [script, setScript] = useState("");
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [modalMode, setModalMode] = useState<'REPETIR' | 'SE'>('REPETIR');
+  const [modalRepeatCount, setModalRepeatCount] = useState(4);
+  const [modalInternalScript, setModalInternalScript] = useState("");
+
+  const accumulateCommand = (prev: string, cmd: string) => {
+    if (!prev) return cmd;
+    
+    const lines = prev.split('\n');
+    const lastLine = lines[lines.length - 1].trim();
+    
+    const isAccumulatable = (s: string) => s.startsWith('AVANCAR') || s.startsWith('RECUAR');
+    
+    if (isAccumulatable(cmd) && isAccumulatable(lastLine)) {
+      const lastParts = lastLine.split(' ');
+      const currParts = cmd.split(' ');
+      
+      if (lastParts[0] === currParts[0]) {
+        const lastVal = parseInt(lastParts[1]) || 1;
+        const currVal = parseInt(currParts[1]) || 1;
+        lines[lines.length - 1] = `${lastParts[0]} ${lastVal + currVal}`;
+        return lines.join('\n');
+      }
+    }
+    
+    return `${prev}\n${cmd}`;
+  };
 
   const appendCommand = (cmd: string) => {
-    setScript(prev => prev ? `${prev}\n${cmd}` : cmd);
+    setScript(prev => accumulateCommand(prev, cmd));
+  };
+
+  const openBlockModal = (type: 'REPETIR' | 'SE') => {
+    setModalMode(type);
+    setModalInternalScript("");
+    setModalRepeatCount(4);
+    setIsModalVisible(true);
+  };
+
+  const confirmBlock = () => {
+    let block = "";
+    if (modalMode === 'REPETIR') {
+      block = `REPETIR ${modalRepeatCount} {\n${modalInternalScript.split('\n').map(l => `  ${l}`).join('\n')}\n}`;
+    } else {
+      block = `SE OBSTACULO {\n${modalInternalScript.split('\n').map(l => `  ${l}`).join('\n')}\n}`;
+    }
+    setScript(prev => prev ? `${prev}\n${block}` : block);
+    setIsModalVisible(false);
   };
 
   const actionButtons = [
-    { label: '↑ AVANÇAR', cmd: 'AVANCAR 1' },
-    { label: '↓ RECUAR', cmd: 'RECUAR 1' },
-    { label: '↺ ESQUERDA', cmd: 'ESQUERDA' },
-    { label: '↻ DIREITA', cmd: 'DIREITA' },
-    { label: '🔍 SCAN', cmd: 'SCAN' },
-    { label: '🧪 COLETAR', cmd: 'COLETAR' },
-    { label: '🔄 FOR', cmd: 'REPETIR 4 {\n\n}' },
-    { label: '🔀 IF', cmd: 'SE OBSTACULO {\n\n}' },
+    { label: '↑ AVANÇAR', cmd: 'AVANCAR 1', group: 'move' },
+    { label: '↓ RECUAR', cmd: 'RECUAR 1', group: 'move' },
+    { label: '↺ ESQUERDA', cmd: 'ESQUERDA', group: 'move' },
+    { label: '↻ DIREITA', cmd: 'DIREITA', group: 'move' },
+    { label: '🔄 REPETIR', type: 'REPETIR', group: 'struct' },
+    { label: '🔀 SE (OBSTÁCULO)', type: 'SE', group: 'struct' },
   ];
 
   return (
@@ -34,12 +77,87 @@ export default function ControlPanel({
       <Text style={styles.badge}>Painel de Comandos</Text>
       
       <View style={styles.actionButtonsRow}>
-        {actionButtons.filter(b => b.cmd !== 'SCAN' && b.cmd !== 'COLETAR').map((btn, i) => (
-          <TouchableOpacity key={i} style={styles.actionBtn} onPress={() => appendCommand(btn.cmd)}>
-            <Text style={styles.actionBtnText}>{btn.label}</Text>
+        {actionButtons.map((btn, i) => (
+          <TouchableOpacity 
+            key={i} 
+            style={[
+              styles.actionBtn, 
+              btn.group === 'struct' && { borderColor: '#7000ff' }
+            ]} 
+            onPress={() => btn.group === 'struct' ? openBlockModal(btn.type as any) : appendCommand(btn.cmd!)}
+          >
+            <Text style={[
+              styles.actionBtnText,
+              btn.group === 'struct' && { color: '#a855f7' }
+            ]}>{btn.label}</Text>
           </TouchableOpacity>
         ))}
       </View>
+
+      <Modal
+        visible={isModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setIsModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>
+              {modalMode === 'REPETIR' ? '⚙️ ASSISTENTE DE LOOP' : '🔀 CONDICIONAL SE'}
+            </Text>
+            
+            {modalMode === 'REPETIR' && (
+              <View style={styles.modalSetting}>
+                <Text style={styles.modalLabel}>REPETIR QUANTAS VEZES?</Text>
+                <View style={styles.modalCounter}>
+                  <TouchableOpacity onPress={() => setModalRepeatCount(Math.max(1, modalRepeatCount - 1))} style={styles.counterBtn}>
+                    <Text style={styles.counterBtnText}>-</Text>
+                  </TouchableOpacity>
+                  <Text style={styles.counterValue}>{modalRepeatCount}</Text>
+                  <TouchableOpacity onPress={() => setModalRepeatCount(modalRepeatCount + 1)} style={styles.counterBtn}>
+                    <Text style={styles.counterBtnText}>+</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
+
+            {modalMode === 'SE' && (
+              <Text style={styles.modalSublabel}>Se detectar um OBSTÁCULO à frente, o Rover irá executar:</Text>
+            )}
+
+            <Text style={styles.modalLabel}>COMANDOS INTERNOS:</Text>
+            <View style={styles.modalPalette}>
+              {actionButtons.filter(b => b.group === 'move').map((btn, i) => (
+                <TouchableOpacity key={i} style={styles.paletteBtn} onPress={() => setModalInternalScript(prev => accumulateCommand(prev, btn.cmd!))}>
+                  <Text style={styles.paletteBtnText}>{btn.label}</Text>
+                </TouchableOpacity>
+              ))}
+              <TouchableOpacity style={styles.paletteBtn} onPress={() => setModalInternalScript(prev => accumulateCommand(prev, 'SCAN'))}>
+                <Text style={styles.paletteBtnText}>🔍 SCAN</Text>
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.modalPreview}>
+              <Text style={styles.previewText}>
+                {modalMode === 'REPETIR' ? `REPETIR ${modalRepeatCount} {` : 'SE OBSTACULO {'}
+              </Text>
+              <Text style={[styles.previewText, { paddingLeft: 20, color: '#00f2ff' }]}>
+                {modalInternalScript || '(vazio)'}
+              </Text>
+              <Text style={styles.previewText}>{'}'}</Text>
+            </ScrollView>
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity style={styles.modalCancel} onPress={() => setIsModalVisible(false)}>
+                <Text style={styles.modalCancelText}>CANCELAR</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.modalConfirm} onPress={confirmBlock}>
+                <Text style={styles.modalConfirmText}>INSERIR NO SCRIPT</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
       <View style={{ flexDirection: 'row', gap: 8, marginBottom: 16 }}>
         <TouchableOpacity style={[styles.scanBtn, { flex: 1, marginBottom: 0 }]} onPress={() => appendCommand('SCAN')}>
           <Text style={styles.scanBtnText}>🔍 RADAR</Text>
@@ -96,6 +214,14 @@ const styles = StyleSheet.create({
     borderBottomColor: '#00f2ff',
     alignSelf: 'flex-start',
     fontFamily: 'Orbitron-Bold'
+  },
+  sectionTitle: {
+    color: 'rgba(255, 255, 255, 0.4)',
+    fontSize: 9,
+    textTransform: 'uppercase',
+    marginBottom: 8,
+    fontFamily: 'Orbitron-Bold',
+    letterSpacing: 1,
   },
   actionButtonsRow: {
     flexDirection: 'row',
@@ -178,5 +304,133 @@ const styles = StyleSheet.create({
     color: '#f8fafc',
     fontSize: 14,
     fontWeight: 'bold',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(5, 7, 20, 0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    width: '100%',
+    maxWidth: 450,
+    backgroundColor: '#0f172a',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#00f2ff',
+    padding: 24,
+    shadowColor: '#00f2ff',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 20,
+  },
+  modalTitle: {
+    color: '#00f2ff',
+    fontSize: 18,
+    fontFamily: 'Orbitron-Bold',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  modalSetting: {
+    marginBottom: 20,
+    alignItems: 'center',
+  },
+  modalLabel: {
+    color: '#94a3b8',
+    fontSize: 10,
+    fontFamily: 'Orbitron-Bold',
+    marginBottom: 10,
+  },
+  modalSublabel: {
+    color: '#f8fafc',
+    fontSize: 12,
+    marginBottom: 15,
+    textAlign: 'center',
+  },
+  modalCounter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 20,
+  },
+  counterBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#00f2ff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  counterBtnText: {
+    color: '#00f2ff',
+    fontSize: 24,
+  },
+  counterValue: {
+    color: '#f8fafc',
+    fontSize: 24,
+    fontFamily: 'Orbitron-Bold',
+  },
+  modalPalette: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 20,
+  },
+  paletteBtn: {
+    backgroundColor: 'rgba(0, 242, 255, 0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 242, 255, 0.2)',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 4,
+  },
+  paletteBtnText: {
+    color: '#00f2ff',
+    fontSize: 10,
+    fontFamily: 'Orbitron-Bold',
+  },
+  modalPreview: {
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    borderRadius: 8,
+    padding: 12,
+    maxHeight: 150,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
+  },
+  previewText: {
+    color: '#94a3b8',
+    fontFamily: 'RobotoMono',
+    fontSize: 12,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  modalCancel: {
+    flex: 1,
+    padding: 12,
+    alignItems: 'center',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  modalCancelText: {
+    color: '#94a3b8',
+    fontFamily: 'Orbitron-Bold',
+    fontSize: 12,
+  },
+  modalConfirm: {
+    flex: 2,
+    backgroundColor: '#00f2ff',
+    padding: 12,
+    alignItems: 'center',
+    borderRadius: 8,
+  },
+  modalConfirmText: {
+    color: '#050714',
+    fontFamily: 'Orbitron-Bold',
+    fontSize: 12,
   }
 });
