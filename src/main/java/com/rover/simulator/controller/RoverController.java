@@ -31,7 +31,9 @@ public class RoverController {
         result.gridWidth = currentGrid.getWidth();
         result.gridHeight = currentGrid.getHeight();
         result.obstacles = currentGrid.getObstacles();
-        
+        result.samples = currentGrid.getSamples();
+        result.revealedCells = currentGrid.getRevealedCells();
+
         return result;
     }
 
@@ -42,8 +44,10 @@ public class RoverController {
         response.put("width", currentGrid.getWidth());
         response.put("height", currentGrid.getHeight());
         response.put("obstacles", currentGrid.getObstacles());
+        response.put("samples", currentGrid.getSamples());
         response.put("startX", 10);
         response.put("startY", 10);
+        response.put("revealedCells", currentGrid.getRevealedCells());
         return response;
     }
 
@@ -57,7 +61,7 @@ public class RoverController {
         int size = 20;
         currentGrid = new Grid(size, size);
         Random rand = new Random();
-        int obstacleCount = 30 + rand.nextInt(20);
+        int obstacleCount = 60 + rand.nextInt(40);
         
         for (int i = 0; i < obstacleCount; i++) {
             int x = rand.nextInt(size);
@@ -65,5 +69,15 @@ public class RoverController {
             if (x == 10 && y == 10) continue;
             currentGrid.addObstacle(x, y);
         }
+        
+        int sampleX, sampleY;
+        do {
+            sampleX = rand.nextInt(size);
+            sampleY = rand.nextInt(size);
+        } while (currentGrid.isObstacle(sampleX, sampleY) || (sampleX == 10 && sampleY == 10));
+        currentGrid.addSample(sampleX, sampleY);
+
+        // Reveal initial 3x3 area around rover start so the map isn't fully dark on load
+        currentGrid.revealCell(10, 10, 1);
     }
 }

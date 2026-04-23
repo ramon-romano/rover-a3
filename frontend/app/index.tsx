@@ -1,4 +1,15 @@
 import React, { useState, useEffect } from 'react';
+
+interface WorldData {
+  startX?: number;
+  startY?: number;
+  width?: number;
+  height?: number;
+  obstacles?: string[];
+  samples?: string[];
+  revealedCells?: string[];
+  error?: boolean;
+}
 import { View, StyleSheet, ScrollView, Text, ActivityIndicator, useWindowDimensions, ImageBackground, TouchableOpacity, Platform } from 'react-native';
 import { fetchWorld, simulateScript, resetWorld } from '../services/api';
 
@@ -11,17 +22,24 @@ import { useRouter } from 'expo-router';
 
 export default function Home() {
   const router = useRouter();
-  const [worldData, setWorldData] = useState(null);
+  const [worldData, setWorldData] = useState<WorldData | null>(null);
   const [roverPos, setRoverPos] = useState({ x: 10, y: 10, dir: 'N' });
   const [obstacles, setObstacles] = useState([]);
+  const [samples, setSamples] = useState([]);
+  const [collectedSamples, setCollectedSamples] = useState<string[]>([]);
+  const [revealedCells, setRevealedCells] = useState<string[]>([]);
+  const [isDead, setIsDead] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [isLost, setIsLost] = useState(false);
   const [logs, setLogs] = useState<any[]>([{ id: 0, text: 'Aguardando comandos do Centro de Controle...', type: 'system' }]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [scanStatus, setScanStatus] = useState('READY');
+  const [isScanning, setIsScanning] = useState(false);
 
   const { width } = useWindowDimensions();
   const isWebLarge = width > 1000;
 
-  const addLog = (text, type = 'move') => {
+  const addLog = (text: string, type = 'move') => {
     setLogs(prev => [...prev, { id: Date.now() + Math.random(), text: `[${new Date().toLocaleTimeString().split(' ')[0]}] ${text}`, type }]);
   };
 
@@ -30,10 +48,19 @@ export default function Home() {
       const data = await fetchWorld();
       setWorldData(data);
       setRoverPos({ x: data.startX || 10, y: data.startY || 10, dir: 'N' });
-      setObstacles(data.obstacles.map((s: string) => {
+      setObstacles(data.obstacles ? data.obstacles.map((s: string) => {
         const [x, y] = s.split(',').map(Number);
         return { x, y };
-      }));
+      }) : []);
+      setSamples(data.samples ? data.samples.map((s: string) => {
+        const [x, y] = s.split(',').map(Number);
+        return { x, y };
+      }) : []);
+      setRevealedCells(data.revealedCells || []);
+      setCollectedSamples([]);
+      setIsDead(false);
+      setIsSuccess(false);
+      setIsLost(false);
     } catch (e) {
       setWorldData({ error: true });
       addLog("ERRO AO CARREGAR O MUNDO. Verifique a API.", 'danger');
@@ -51,23 +78,108 @@ export default function Home() {
     
     try {
       const result = await simulateScript(script);
+      
+      // Update persistent map states from final simulation
+      // REMOVED: if (result.revealedCells) setRevealedCells(result.revealedCells); 
+      // We reveal incrementally now!
+      if (result.obstacles) setObstacles(result.obstacles.map((s: string) => { const [x, y] = s.split(',').map(Number); return { x, y }; }));
+      if (result.samples) {
+        setSamples(prev => {
+          const existing = new Set(prev.map((s: any) => `${s.x},${s.y}`));
+          const next = [...prev];
+          result.samples?.forEach((s: string) => {
+            if (!existing.has(s)) {
+              const [x, y] = s.split(',').map(Number);
+              next.push({ x, y });
+            }
+          });
+          return next;
+        });
+      }
+
       if (result.steps) {
+        let missionEnded = false;
         for (const step of result.steps) {
           setRoverPos({ x: step.x, y: step.y, dir: step.dir });
-          let type = 'move';
-          if (step.collision || step.outOfBounds) type = 'danger';
-          else if (step.obstacleDetected !== undefined) {
-            type = step.obstacleDetected ? 'warn' : 'system';
-            setScanStatus(step.obstacleDetected ? "ALERTA" : "LIMPO");
+
+          // Incremental reveal
+          if (step.newRevealedCells?.length > 0) {
+            setRevealedCells(prev => {
+              const next = new Set(prev);
+              step.newRevealedCells.forEach(cell => next.add(cell));
+              return Array.from(next);
+            });
           }
-          addLog(step.log, type);
-          await new Promise(r => setTimeout(r, 400));
+
+          // --- Flag: Collision ---
+          if (step.collision) {
+            setIsDead(true);
+            addLog(`💥 ${step.log}`, 'danger');
+            missionEnded = true;
+            // Auto-reset after death animation
+            await new Promise(r => setTimeout(r, 2000));
+            handleReset();
+            break;
+          }
+
+          // --- Flag: Out of Bounds ---
+          if (step.outOfBounds) {
+            setIsLost(true);
+            addLog(`📡 SINAL PERDIDO: rover saiu dos limites do mapa!`, 'danger');
+            missionEnded = true;
+            // Auto-reset after signal-lost screen
+            await new Promise(r => setTimeout(r, 2500));
+            handleReset();
+            break;
+          }
+
+          // --- Flag: Obstacle Detected (SCAN result) ---
+          const isScannerStep = step.log && (
+            step.log.toUpperCase().includes('SCAN') || 
+            step.log.toUpperCase().includes('SCANNER') || 
+            step.log.toUpperCase().includes('ÁREA REVELADA') ||
+            step.log.toUpperCase().includes('OBSTÁCULO DETECTADO')
+          );
+
+          if (isScannerStep) {
+            setIsScanning(true);
+            await new Promise(r => setTimeout(r, 600)); // Animation time
+            setIsScanning(false);
+            
+            if (step.obstacleDetected) {
+              setScanStatus('ALERTA');
+              addLog(step.log, 'scan-alert');
+            } else {
+              setScanStatus('LIMPO');
+              addLog(step.log, 'warn');
+            }
+            await new Promise(r => setTimeout(r, 400));
+            continue;
+          }
+
+          // --- Flag: Sample Collected ---
+          if (step.sampleCollected) {
+            addLog(`🎉 ${step.log}`, 'success');
+            setCollectedSamples(prev => [...prev, `${step.x},${step.y}`]);
+            setIsSuccess(true);
+            missionEnded = true;
+            await new Promise(r => setTimeout(r, 1500));
+            handleReset();
+            break;
+          }
+
+          // --- Normal move ---
+          addLog(step.log, 'move');
+          await new Promise(r => setTimeout(r, 350));
         }
-      }
-      if (!result.success || result.error) {
-        addLog(result.error || "Erro na missão.", 'danger');
-      } else {
-        addLog("MISSÃO COMPLETA.", 'system');
+
+        if (!missionEnded) {
+          if (!result.success || result.error) {
+            addLog(result.error || 'Erro na missão.', 'danger');
+          } else {
+            addLog('Script executado. Aguardando próximos comandos.', 'system');
+          }
+        }
       }
     } catch (e) {
       addLog("ERRO DE CONEXÃO.", 'danger');
@@ -82,10 +194,18 @@ export default function Home() {
       const data = await resetWorld();
       setWorldData(data);
       setRoverPos({ x: data.startX || 10, y: data.startY || 10, dir: 'N' });
-      setObstacles(data.obstacles.map((s: string) => {
+      setObstacles(data.obstacles ? data.obstacles.map((s: string) => {
         const [x, y] = s.split(',').map(Number);
         return { x, y };
-      }));
+      }) : []);
+      setSamples(data.samples ? data.samples.map((s: string) => {
+        const [x, y] = s.split(',').map(Number);
+        return { x, y };
+      }) : []);
+      setRevealedCells(data.revealedCells || []);
+      setIsDead(false);
+      setIsSuccess(false);
+      setIsLost(false);
       setScanStatus("READY");
     } catch (e) {}
   };
@@ -140,7 +260,7 @@ export default function Home() {
             </View>
             <View style={styles.webColRight}>
               <View style={styles.mainGrid}>
-                <RoverGrid size={worldData.width} obstacles={obstacles} rover={roverPos} />
+                <RoverGrid size={worldData.width || 20} obstacles={obstacles} rover={roverPos} samples={samples} collectedSamples={collectedSamples} revealedCells={revealedCells} isDead={isDead} isSuccess={isSuccess} isLost={isLost} isScanning={isScanning} />
               </View>
               <DocumentationHint />
             </View>
@@ -149,7 +269,7 @@ export default function Home() {
           <View style={{ gap: 24, width: '100%', alignItems: 'center' }}>
             <RoverStats pos={roverPos} scanStatus={scanStatus} />
             <View style={styles.mainGrid}>
-              <RoverGrid size={worldData.width} obstacles={obstacles} rover={roverPos} />
+              <RoverGrid size={worldData.width || 20} obstacles={obstacles} rover={roverPos} samples={samples} collectedSamples={collectedSamples} revealedCells={revealedCells} isDead={isDead} isSuccess={isSuccess} isLost={isLost} isScanning={isScanning} />
             </View>
             <DocumentationHint />
             <ControlPanel onRun={handleRunSimulation} onReset={handleReset} onClearLogs={handleClear} isProcessing={isProcessing} />
