@@ -61,7 +61,7 @@ public class RoverController {
         int size = 20;
         currentGrid = new Grid(size, size);
         Random rand = new Random();
-        int obstacleCount = 30 + rand.nextInt(20);
+        int obstacleCount = 60 + rand.nextInt(40);
         
         for (int i = 0; i < obstacleCount; i++) {
             int x = rand.nextInt(size);
@@ -77,5 +77,7 @@ public class RoverController {
         } while (currentGrid.isObstacle(sampleX, sampleY) || (sampleX == 10 && sampleY == 10));
         currentGrid.addSample(sampleX, sampleY);
 
+        // Reveal initial 3x3 area around rover start so the map isn't fully dark on load
+        currentGrid.revealCell(10, 10, 1);
     }
 }

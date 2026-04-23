@@ -1,6 +1,8 @@
 package com.rover.simulator.model;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 public class Grid {
@@ -26,14 +28,19 @@ public class Grid {
         samples.add(x + "," + y);
     }
 
-    public void revealCell(int centerX, int centerY, int radius) {
+    public List<String> revealCell(int centerX, int centerY, int radius) {
+        List<String> newCells = new ArrayList<>();
         for (int x = centerX - radius; x <= centerX + radius; x++) {
             for (int y = centerY - radius; y <= centerY + radius; y++) {
                 if (!isOutOfBounds(x, y)) {
-                    revealedCells.add(x + "," + y);
+                    String key = x + "," + y;
+                    if (revealedCells.add(key)) {
+                        newCells.add(key);
+                    }
                 }
             }
         }
+        return newCells;
     }
 
     public boolean isRevealed(int x, int y) {
