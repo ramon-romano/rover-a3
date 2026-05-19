@@ -73,6 +73,14 @@ export default function Home() {
 
   const handleRunSimulation = async (script: string) => {
     if (!script.trim()) return;
+
+    // Reset simulation status and position to start coordinates before running animation
+    setIsDead(false);
+    setIsSuccess(false);
+    setIsLost(false);
+    setScanStatus("READY");
+    setRoverPos({ x: worldData?.startX || 10, y: worldData?.startY || 10, dir: 'N' });
+
     setIsProcessing(true);
     addLog(">>> Transmitindo script...", 'system');
     
@@ -204,6 +212,11 @@ export default function Home() {
 
   const handleClear = () => {
     setLogs([{ id: Date.now(), text: 'Comandos limpos pelo operador.', type: 'system' }]);
+    setIsDead(false);
+    setIsSuccess(false);
+    setIsLost(false);
+    setScanStatus("READY");
+    setRoverPos({ x: worldData?.startX || 10, y: worldData?.startY || 10, dir: 'N' });
   };
 
   if (!worldData) {
