@@ -1,1 +1,9 @@
+com\rover\simulator\RoverApplication.class
+com\rover\simulator\service\InterpreterService.class
+com\rover\simulator\service\InterpreterService$SimulationResult.class
+com\rover\simulator\controller\RoverController.class
+com\rover\simulator\model\Rover.class
 com\rover\simulator\service\InterpreterService$1.class
+com\rover\simulator\service\InterpreterService$SimulationStep.class
+com\rover\simulator\model\Direction.class
+com\rover\simulator\model\Grid.class

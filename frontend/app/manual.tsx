@@ -29,9 +29,9 @@ export default function Manual() {
             </View>
             <View style={styles.card}>
               <Text style={styles.cardTitle}>Manobras</Text>
-              <Text style={styles.cardP}>Altere a orientação do rover em 90°.</Text>
-              <Text style={styles.code}>ESQUERDA</Text>
-              <Text style={styles.code}>DIREITA</Text>
+              <Text style={styles.cardP}>Altere a orientação em 90º (aceita número opcional de giros).</Text>
+              <Text style={styles.code}>ESQUERDA [n]</Text>
+              <Text style={styles.code}>DIREITA 2</Text>
             </View>
             <View style={styles.card}>
               <Text style={styles.cardTitle}>Sensoriamento</Text>

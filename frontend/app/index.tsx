@@ -24,8 +24,8 @@ export default function Home() {
   const router = useRouter();
   const [worldData, setWorldData] = useState<WorldData | null>(null);
   const [roverPos, setRoverPos] = useState({ x: 10, y: 10, dir: 'N' });
-  const [obstacles, setObstacles] = useState([]);
-  const [samples, setSamples] = useState([]);
+  const [obstacles, setObstacles] = useState<{ x: number; y: number }[]>([]);
+  const [samples, setSamples] = useState<{ x: number; y: number }[]>([]);
   const [collectedSamples, setCollectedSamples] = useState<string[]>([]);
   const [revealedCells, setRevealedCells] = useState<string[]>([]);
   const [isDead, setIsDead] = useState(false);
@@ -106,7 +106,7 @@ export default function Home() {
           if (step.newRevealedCells?.length > 0) {
             setRevealedCells(prev => {
               const next = new Set(prev);
-              step.newRevealedCells.forEach(cell => next.add(cell));
+              step.newRevealedCells.forEach((cell: string) => next.add(cell));
               return Array.from(next);
             });
           }
@@ -116,9 +116,6 @@ export default function Home() {
             setIsDead(true);
             addLog(`💥 ${step.log}`, 'danger');
             missionEnded = true;
-            // Auto-reset after death animation
-            await new Promise(r => setTimeout(r, 2000));
-            handleReset();
             break;
           }
 
@@ -127,9 +124,6 @@ export default function Home() {
             setIsLost(true);
             addLog(`📡 SINAL PERDIDO: rover saiu dos limites do mapa!`, 'danger');
             missionEnded = true;
-            // Auto-reset after signal-lost screen
-            await new Promise(r => setTimeout(r, 2500));
-            handleReset();
             break;
           }
 
@@ -163,8 +157,6 @@ export default function Home() {
             setCollectedSamples(prev => [...prev, `${step.x},${step.y}`]);
             setIsSuccess(true);
             missionEnded = true;
-            await new Promise(r => setTimeout(r, 1500));
-            handleReset();
             break;
           }
 
@@ -256,7 +248,7 @@ export default function Home() {
             <View style={styles.webColLeft}>
               <ControlPanel onRun={handleRunSimulation} onReset={handleReset} onClearLogs={handleClear} isProcessing={isProcessing} />
               <RoverStats pos={roverPos} scanStatus={scanStatus} />
-              <TelemetryLogs logs={logs} />
+              <TelemetryLogs logs={logs} onClear={handleClear} />
             </View>
             <View style={styles.webColRight}>
               <View style={styles.mainGrid}>
@@ -273,7 +265,7 @@ export default function Home() {
             </View>
             <DocumentationHint />
             <ControlPanel onRun={handleRunSimulation} onReset={handleReset} onClearLogs={handleClear} isProcessing={isProcessing} />
-            <TelemetryLogs logs={logs} />
+            <TelemetryLogs logs={logs} onClear={handleClear} />
           </View>
         )}
       </ScrollView>

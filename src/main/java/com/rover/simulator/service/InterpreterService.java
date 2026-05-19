@@ -86,14 +86,10 @@ public class InterpreterService {
                     index = handleMove(tokens, index + 1, grid, rover, result, -1);
                     break;
                 case "ESQUERDA":
-                    rover.setDirection(rover.getDirection().turnLeft());
-                    result.steps.add(new SimulationStep(rover.getX(), rover.getY(), rover.getDirection(), "Girou para esquerda."));
-                    index++;
+                    index = handleTurn(tokens, index + 1, rover, result, -1);
                     break;
                 case "DIREITA":
-                    rover.setDirection(rover.getDirection().turnRight());
-                    result.steps.add(new SimulationStep(rover.getX(), rover.getY(), rover.getDirection(), "Girou para direita."));
-                    index++;
+                    index = handleTurn(tokens, index + 1, rover, result, 1);
                     break;
                 case "SCAN":
                     List<String> scanReveals = grid.revealCell(rover.getX(), rover.getY(), 3);
@@ -252,5 +248,31 @@ public class InterpreterService {
         }
         
         return index;
+    }
+
+    private int handleTurn(List<String> tokens, int index, Rover rover, SimulationResult result, int directionMultiplier) {
+        int turns = 1;
+        boolean hasNumber = false;
+        if (index < tokens.size()) {
+            String nextToken = tokens.get(index);
+            try {
+                turns = Integer.parseInt(nextToken);
+                hasNumber = true;
+            } catch (NumberFormatException e) {
+                // Not a number, so it's the next command. We default to 1.
+            }
+        }
+
+        for (int i = 0; i < turns; i++) {
+            if (directionMultiplier < 0) {
+                rover.setDirection(rover.getDirection().turnLeft());
+                result.steps.add(new SimulationStep(rover.getX(), rover.getY(), rover.getDirection(), "Girou para esquerda."));
+            } else {
+                rover.setDirection(rover.getDirection().turnRight());
+                result.steps.add(new SimulationStep(rover.getX(), rover.getY(), rover.getDirection(), "Girou para direita."));
+            }
+        }
+
+        return hasNumber ? index + 1 : index;
     }
 }

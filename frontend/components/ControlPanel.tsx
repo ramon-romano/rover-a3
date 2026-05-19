@@ -24,7 +24,7 @@ export default function ControlPanel({
     const lines = prev.split('\n');
     const lastLine = lines[lines.length - 1].trim();
     
-    const isAccumulatable = (s: string) => s.startsWith('AVANCAR') || s.startsWith('RECUAR');
+    const isAccumulatable = (s: string) => s.startsWith('AVANCAR') || s.startsWith('RECUAR') || s.startsWith('ESQUERDA') || s.startsWith('DIREITA');
     
     if (isAccumulatable(cmd) && isAccumulatable(lastLine)) {
       const lastParts = lastLine.split(' ');
@@ -66,8 +66,8 @@ export default function ControlPanel({
   const actionButtons = [
     { label: '↑ AVANÇAR', cmd: 'AVANCAR 1', group: 'move' },
     { label: '↓ RECUAR', cmd: 'RECUAR 1', group: 'move' },
-    { label: '↺ ESQUERDA', cmd: 'ESQUERDA', group: 'move' },
-    { label: '↻ DIREITA', cmd: 'DIREITA', group: 'move' },
+    { label: '↺ ESQUERDA', cmd: 'ESQUERDA 1', group: 'move' },
+    { label: '↻ DIREITA', cmd: 'DIREITA 1', group: 'move' },
     { label: '🔄 REPETIR', type: 'REPETIR', group: 'struct' },
     { label: '🔀 SE (OBSTÁCULO)', type: 'SE', group: 'struct' },
   ];
