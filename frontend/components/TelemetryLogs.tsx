@@ -1,12 +1,19 @@
 import React, { useRef } from 'react';
-import { View, StyleSheet, Text, ScrollView } from 'react-native';
+import { View, StyleSheet, Text, ScrollView, TouchableOpacity } from 'react-native';
 
-export default function TelemetryLogs({ logs }: { logs: any[] }) {
+export default function TelemetryLogs({ logs, onClear }: { logs: any[]; onClear?: () => void }) {
   const scrollRef = useRef<ScrollView>(null);
 
   return (
     <View style={styles.container}>
-      <Text style={styles.badge}>Relatório de Telemetria</Text>
+      <View style={styles.headerRow}>
+        <Text style={styles.badge}>Relatório de Telemetria</Text>
+        {onClear && (
+          <TouchableOpacity onPress={onClear} style={styles.clearBtn}>
+            <Text style={styles.clearBtnText}>LIMPAR</Text>
+          </TouchableOpacity>
+        )}
+      </View>
       <ScrollView
         style={styles.logsContainer}
         ref={scrollRef}
@@ -76,10 +83,31 @@ const styles = StyleSheet.create({
     color: '#00f2ff',
     fontSize: 12,
     textTransform: 'uppercase',
-    marginBottom: 10,
     borderBottomWidth: 1,
     borderBottomColor: '#00f2ff',
     alignSelf: 'flex-start',
+    fontFamily: 'Orbitron-Bold',
+  },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0, 242, 255, 0.1)',
+    paddingBottom: 6,
+  },
+  clearBtn: {
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.4)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+    backgroundColor: 'rgba(239, 68, 68, 0.08)',
+  },
+  clearBtnText: {
+    color: '#ef4444',
+    fontSize: 9,
     fontFamily: 'Orbitron-Bold',
   },
   logsContainer: { height: 180 },

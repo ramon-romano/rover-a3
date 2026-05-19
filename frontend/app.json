@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "rover-mobile",
-    "slug": "rover-mobile",
+    "name": "Rover - A3",
+    "slug": "rover",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
