@@ -50,9 +50,9 @@ export default function Manual() {
             <View style={[styles.card, { borderLeftColor: '#7000ff' }]}>
                <Text style={[styles.cardTitle, { color: '#7000ff' }]}>Condicionais (Decisão)</Text>
                <Text style={styles.cardP}>Tome decisões baseadas no ambiente.</Text>
-               <Text style={styles.code}>SE OBSTACULO {"{\n  ESQUERDA\n} ELSE {\n  AVANCAR 1\n}"}</Text>
+               <Text style={styles.code}>SE OBSTACULO {"{\n  ESQUERDA\n} SE NÃO {\n  AVANCAR 1\n}"}</Text>
             </View>
-          </View>
+          </View> 
 
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
             <Text style={styles.backBtnText}>← VOLTAR PARA MISSÃO</Text>
