@@ -30,11 +30,11 @@ Executa um bloco de comandos se a condição for verdadeira. Atualmente suporta 
 ```
 SE OBSTACULO {
   COMANDO_SE_VERDADEIRO
-} ELSE {
+} SE NÃO {
   COMANDO_SE_FALSO
 }
 ```
-*Nota: O bloco `ELSE` é opcional.*
+*Nota: O bloco `SE NÃO` (também aceita `ELSE`, `SENÃO` ou `SENAO`) é opcional.*
 
 ## Exemplo de Missão Complexa
 ```

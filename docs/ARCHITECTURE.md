@@ -148,9 +148,9 @@ stateDiagram-v2
 #### A. A Análise Léxica (Lexer / Tokenização)
 O método `tokenize` utiliza uma expressão regular compilada para separar palavras chaves, números de passo/repetição, e delimitadores de escopo de bloco:
 ```java
-Pattern pattern = Pattern.compile("[a-zA-Z]+|\\d+|\\{|\\}");
+Pattern pattern = Pattern.compile("\\p{L}+|\\d+|\\{|\\}");
 ```
-* **`[a-zA-Z]+`**: Captura identificadores e palavras-chave (`AVANCAR`, `ESQUERDA`, `REPETIR`, `SE`, `OBSTACULO`, `ELSE`, `COLETAR`, `SCAN`).
+* **`\p{L}+`**: Captura identificadores e palavras-chave (incluindo letras acentuadas, como `AVANCAR`, `ESQUERDA`, `REPETIR`, `SE`, `OBSTACULO`, `ELSE`, `SE NÃO`, `SENÃO`, `COLETAR`, `SCAN`).
 * **`\\d+`**: Captura inteiros (quantidade de passos ou repetições de loop).
 * **`\\{|\\}`**: Captura os delimitadores estruturais (chaves abertas e fechadas).
 
@@ -179,7 +179,7 @@ O método lê cada token sequencialmente e executa sua respectiva função lógi
    Ativa os radares do Rover. Expande instantaneamente a visibilidade do mapa (Fog of War) em um raio de **3 células** em torno do Rover (uma grade de 7x7 revelada na hora). Também verifica se há algum obstáculo físico diretamente na célula à frente do Rover, definindo `obstacleDetected` como verdadeiro ou falso.
 
 4. **Coleta de Material (`COLETAR`)**:
-   Executa a coleta no solo. O método acessa a célula atual do Rover e tenta capturar a amostra. Se encontrada no `Grid`, a remove e define a flag `sampleCollected = true`, terminando a missão com sucesso de exploração.
+   Executa a coleta no solo. O método acessa a célula atual do Rover e tenta capturar a amostra. Se encontrada no `Grid`, a remove e define a flag `sampleCollected = true`, terminando a missão com sucesso de exploration.
 
 5. **Laços de Repetição (`REPETIR`)**:
    Implementado pelo método `handleFor()`.
@@ -189,8 +189,8 @@ O método lê cada token sequencialmente e executa sua respectiva função lógi
 6. **Condicional Alternativa (`SE`)**:
    Implementado por `handleIf()`. O interpretador verifica se a sintaxe correta é `SE OBSTACULO {`.
    * Executa uma verificação virtual da célula adjacente no vetor de direção atual (`checkObstacleAhead()`).
-   * Se um obstáculo ou limite de mapa for encontrado na frente e a condição for verdadeira: executa recursivamente as instruções internas contidas no escopo das chaves do bloco `SE`. Ao término, avança o índice do script pulando o bloco `ELSE` correspondente (se presente).
-   * Se a condição for falsa (caminho livre): o interpretador executa um laço simples para encontrar o fechamento correspondente das chaves `}` pulando a execução desse bloco. Caso haja um bloco `ELSE` na sequência, o interpretador entra e executa recursivamente as chaves dele.
+   * Se um obstáculo ou limite de mapa for encontrado na frente e a condição for verdadeira: executa recursivamente as instruções internas contidas no escopo das chaves do bloco `SE`. Ao término, avança o índice do script pulando o bloco `ELSE` / `SE NÃO` correspondente (se presente).
+   * Se a condição for falsa (caminho livre): o interpretador executa um laço simples para encontrar o fechamento correspondente das chaves `}` pulando a execução desse bloco. Caso haja um bloco `ELSE` / `SE NÃO` na sequência, o interpretador entra e executa recursivamente as chaves dele.
 
 ---
 

@@ -17,6 +17,9 @@ export default function ControlPanel({
   const [modalMode, setModalMode] = useState<'REPETIR' | 'SE'>('REPETIR');
   const [modalRepeatCount, setModalRepeatCount] = useState(4);
   const [modalInternalScript, setModalInternalScript] = useState("");
+  const [includeElse, setIncludeElse] = useState(false);
+  const [modalElseScript, setModalElseScript] = useState("");
+  const [activeSubBlock, setActiveSubBlock] = useState<'IF' | 'ELSE'>('IF');
 
   const accumulateCommand = (prev: string, cmd: string) => {
     if (!prev) return cmd;
@@ -48,6 +51,9 @@ export default function ControlPanel({
   const openBlockModal = (type: 'REPETIR' | 'SE') => {
     setModalMode(type);
     setModalInternalScript("");
+    setModalElseScript("");
+    setIncludeElse(false);
+    setActiveSubBlock('IF');
     setModalRepeatCount(4);
     setIsModalVisible(true);
   };
@@ -58,6 +64,9 @@ export default function ControlPanel({
       block = `REPETIR ${modalRepeatCount} {\n${modalInternalScript.split('\n').map(l => `  ${l}`).join('\n')}\n}`;
     } else {
       block = `SE OBSTACULO {\n${modalInternalScript.split('\n').map(l => `  ${l}`).join('\n')}\n}`;
+      if (includeElse) {
+        block += ` SE NÃO {\n${modalElseScript.split('\n').map(l => `  ${l}`).join('\n')}\n}`;
+      }
     }
     setScript(prev => prev ? `${prev}\n${block}` : block);
     setIsModalVisible(false);
@@ -122,29 +131,128 @@ export default function ControlPanel({
             )}
 
             {modalMode === 'SE' && (
-              <Text style={styles.modalSublabel}>Se detectar um OBSTÁCULO à frente, o Rover irá executar:</Text>
+              <View style={{ marginBottom: 15 }}>
+                <Text style={styles.modalSublabel}>Se detectar um OBSTÁCULO à frente, o Rover irá executar o bloco SE.</Text>
+                
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                  <Text style={[styles.modalLabel, { marginBottom: 0 }]}>INCLUIR BLOCO SE NÃO (ELSE)?</Text>
+                  <TouchableOpacity 
+                    onPress={() => {
+                      const nextElse = !includeElse;
+                      setIncludeElse(nextElse);
+                      if (nextElse) setActiveSubBlock('ELSE');
+                      else setActiveSubBlock('IF');
+                    }}
+                    style={[styles.paletteBtn, includeElse && { backgroundColor: '#00f2ff', borderColor: '#00f2ff' }]}
+                  >
+                    <Text style={[styles.paletteBtnText, includeElse && { color: '#050714' }]}>
+                      {includeElse ? 'SIM' : 'NÃO'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+                {includeElse && (
+                  <View style={{ flexDirection: 'row', gap: 10, justifyContent: 'center', marginVertical: 5 }}>
+                    <TouchableOpacity 
+                      onPress={() => setActiveSubBlock('IF')}
+                      style={[styles.paletteBtn, { flex: 1, alignItems: 'center' }, activeSubBlock === 'IF' && { borderColor: '#00f2ff', backgroundColor: 'rgba(0, 242, 255, 0.1)' }]}
+                    >
+                      <Text style={[styles.paletteBtnText, activeSubBlock === 'IF' && { color: '#00f2ff' }]}>EDITAR: SE</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                      onPress={() => setActiveSubBlock('ELSE')}
+                      style={[styles.paletteBtn, { flex: 1, alignItems: 'center' }, activeSubBlock === 'ELSE' && { borderColor: '#7000ff', backgroundColor: 'rgba(112, 0, 255, 0.1)' }]}
+                    >
+                      <Text style={[styles.paletteBtnText, activeSubBlock === 'ELSE' && { color: '#a855f7' }]}>EDITAR: SE NÃO</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </View>
             )}
 
             <Text style={styles.modalLabel}>COMANDOS INTERNOS:</Text>
             <View style={styles.modalPalette}>
               {actionButtons.filter(b => b.group === 'move').map((btn, i) => (
-                <TouchableOpacity key={i} style={styles.paletteBtn} onPress={() => setModalInternalScript(prev => accumulateCommand(prev, btn.cmd!))}>
+                <TouchableOpacity 
+                  key={i} 
+                  style={styles.paletteBtn} 
+                  onPress={() => {
+                    const code = btn.cmd!;
+                    if (modalMode === 'REPETIR') {
+                      setModalInternalScript(prev => accumulateCommand(prev, code));
+                    } else {
+                      if (activeSubBlock === 'IF') {
+                        setModalInternalScript(prev => accumulateCommand(prev, code));
+                      } else {
+                        setModalElseScript(prev => accumulateCommand(prev, code));
+                      }
+                    }
+                  }}
+                >
                   <Text style={styles.paletteBtnText}>{btn.label}</Text>
                 </TouchableOpacity>
               ))}
-              <TouchableOpacity style={styles.paletteBtn} onPress={() => setModalInternalScript(prev => accumulateCommand(prev, 'SCAN'))}>
+              <TouchableOpacity 
+                style={styles.paletteBtn} 
+                onPress={() => {
+                  if (modalMode === 'REPETIR') {
+                    setModalInternalScript(prev => accumulateCommand(prev, 'SCAN'));
+                  } else {
+                    if (activeSubBlock === 'IF') {
+                      setModalInternalScript(prev => accumulateCommand(prev, 'SCAN'));
+                    } else {
+                      setModalElseScript(prev => accumulateCommand(prev, 'SCAN'));
+                    }
+                  }
+                }}
+              >
                 <Text style={styles.paletteBtnText}>🔍 SCAN</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[styles.paletteBtn, { borderColor: '#ef4444', backgroundColor: 'rgba(239, 68, 68, 0.05)' }]} 
+                onPress={() => {
+                  if (modalMode === 'REPETIR') {
+                    setModalInternalScript("");
+                  } else {
+                    if (activeSubBlock === 'IF') {
+                      setModalInternalScript("");
+                    } else {
+                      setModalElseScript("");
+                    }
+                  }
+                }}
+              >
+                <Text style={[styles.paletteBtnText, { color: '#ef4444' }]}>❌ LIMPAR BLOCO</Text>
               </TouchableOpacity>
             </View>
 
             <ScrollView style={styles.modalPreview}>
-              <Text style={styles.previewText}>
-                {modalMode === 'REPETIR' ? `REPETIR ${modalRepeatCount} {` : 'SE OBSTACULO {'}
-              </Text>
-              <Text style={[styles.previewText, { paddingLeft: 20, color: '#00f2ff' }]}>
-                {modalInternalScript || '(vazio)'}
-              </Text>
-              <Text style={styles.previewText}>{'}'}</Text>
+              {modalMode === 'REPETIR' ? (
+                <>
+                  <Text style={styles.previewText}>{`REPETIR ${modalRepeatCount} {`}</Text>
+                  <Text style={[styles.previewText, { paddingLeft: 20, color: '#00f2ff' }]}>
+                    {modalInternalScript || '(vazio)'}
+                  </Text>
+                  <Text style={styles.previewText}>{'}'}</Text>
+                </>
+              ) : (
+                <>
+                  <Text style={styles.previewText}>SE OBSTACULO {'{'}</Text>
+                  <Text style={[styles.previewText, { paddingLeft: 20, color: activeSubBlock === 'IF' ? '#00f2ff' : '#94a3b8' }]}>
+                    {modalInternalScript || '(vazio)'}
+                  </Text>
+                  <Text style={styles.previewText}>{'}'}</Text>
+                  {includeElse && (
+                    <>
+                      <Text style={styles.previewText}>SE NÃO {'{'}</Text>
+                      <Text style={[styles.previewText, { paddingLeft: 20, color: activeSubBlock === 'ELSE' ? '#a855f7' : '#94a3b8' }]}>
+                        {modalElseScript || '(vazio)'}
+                      </Text>
+                      <Text style={styles.previewText}>{'}'}</Text>
+                    </>
+                  )}
+                </>
+              )}
             </ScrollView>
 
             <View style={styles.modalActions}>

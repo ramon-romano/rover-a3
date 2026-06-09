@@ -62,8 +62,13 @@ public class InterpreterService {
 
     private List<String> tokenize(String script) {
         List<String> tokens = new ArrayList<>();
-        Pattern pattern = Pattern.compile("[a-zA-Z]+|\\d+|\\{|\\}");
-        Matcher matcher = pattern.matcher(script.toUpperCase());
+        Pattern pattern = Pattern.compile("\\p{L}+|\\d+|\\{|\\}");
+        
+        // Normalize accents (diacritics)
+        String normalizedScript = java.text.Normalizer.normalize(script.toUpperCase(), java.text.Normalizer.Form.NFD);
+        normalizedScript = normalizedScript.replaceAll("[\\p{InCombiningDiacriticalMarks}]", "");
+        
+        Matcher matcher = pattern.matcher(normalizedScript);
         while (matcher.find()) {
             tokens.add(matcher.group());
         }
@@ -231,9 +236,24 @@ public class InterpreterService {
         
         index = blockEnd + 1;
         
-        if (index < tokens.size() && tokens.get(index).equals("ELSE")) {
-            index++;
-            if (index >= tokens.size() || !tokens.get(index).equals("{")) throw new Exception("Símbolo '{' faltando no bloco ELSE.");
+        boolean isElse = false;
+        int elseTokenLength = 0;
+        
+        if (index < tokens.size()) {
+            String token = tokens.get(index);
+            if (token.equals("ELSE") || token.equals("SENAO") || token.equals("SENÃO")) {
+                isElse = true;
+                elseTokenLength = 1;
+            } else if (token.equals("SE") && index + 1 < tokens.size() && 
+                      (tokens.get(index + 1).equals("NÃO") || tokens.get(index + 1).equals("NAO"))) {
+                isElse = true;
+                elseTokenLength = 2;
+            }
+        }
+        
+        if (isElse) {
+            index += elseTokenLength;
+            if (index >= tokens.size() || !tokens.get(index).equals("{")) throw new Exception("Símbolo '{' faltando no bloco SE NÃO.");
             index++;
             if (!condition) {
                 index = execute(tokens, grid, rover, result, index) + 1;
